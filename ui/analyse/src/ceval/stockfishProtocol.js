@@ -105,6 +105,7 @@ module.exports = function(worker, opts) {
       if (!work) s.resolve(true);
       else {
         work = null;
+        state = null;
         stopped = s;
         worker.send('stop');
       }
