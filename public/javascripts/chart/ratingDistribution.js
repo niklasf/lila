@@ -1,129 +1,110 @@
 lichess.ratingDistributionChart = function(data) {
-  lichess.loadScript('/assets/javascripts/chart/common.js').done(function() {
-    lichess.chartCommon('highchart').done(function() {
-      var disabled = {
-        enabled: false
-      };
-      var noText = {
-        text: null
-      };
-      $('#rating_distribution_chart').each(function() {
-        var colors = Highcharts.getOptions().colors;
-        var ratingAt = function(i) {
-          return 800 + i * 25;
-        };
-        var arraySum = function(arr) {
-          return arr.reduce(function(a, b) {
-            return a + b;
-          }, 0);
-        };
-        var sum = arraySum(data.freq);
-        var cumul = [];
-        for (var i = 0; i < data.freq.length; i++)
-          cumul.push(Math.round(arraySum(data.freq.slice(0, i)) / sum * 100));
-        $(this).highcharts({
-          yAxis: {
-            title: noText
-          },
-          credits: disabled,
-          legend: disabled,
-          series: [{
-            name: 'Frequency',
-            type: 'area',
-            data: data.freq.map(function(nb, i) {
-              return [ratingAt(i), nb];
-            }),
-            color: colors[1],
-            fillColor: {
-              linearGradient: {
-                x1: 0,
-                y1: 0,
-                x2: 0,
-                y2: 1.1
-              },
-              stops: [
-                [0, colors[1]],
-                [1, Highcharts.Color(colors[1]).setOpacity(0).get('rgba')]
-              ]
-            },
-            marker: {
-              radius: 5
-            },
-            lineWidth: 4,
-            tooltip: {
-              valueSuffix: ' players'
+  var total = data.freq.reduce(function (a, b) {
+    return a + b
+  }, 0);
+  var cumul = [];
+  for (var i = 0, sum = 0; i < data.freq.length; i++) {
+    sum += data.freq[i];
+    cumul.push(sum / total * 100);
+  }
+
+  var spinner = document.querySelector('#rating_distribution_chart .spinner');
+  var canvas = document.createElement('canvas');
+  spinner.parentNode.replaceChild(canvas, spinner);
+  var ctx = canvas.getContext('2d');
+
+  var gradient = ctx.createLinearGradient(0, 0, 0, 400);
+  gradient.addColorStop(0, 'rgba(119, 152, 191, 0.8)');
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0.8)');
+
+  $.ajax({
+    dataType: 'script',
+    cache: true,
+    url: 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.3.0/Chart.js'
+  }).done(function () {
+    new Chart(ctx, {
+      type: 'line',
+      scaleSteps: 100,
+      data: {
+        datasets: [{
+          label: 'Cumulative',
+          yAxisID: 'yCumul',
+          data: cumul.map(function (y, x) {
+            return {x: 800 + x * 25, y: y};
+          }),
+          fill: false,
+          borderColor: '#dddf0d',
+        }, {
+          label: 'Frequency',
+          yAxisID: 'yFreq',
+          data: data.freq.map(function (y, x) {
+            return {x: 800 + x * 25, y: y};
+          }),
+          backgroundColor: gradient,
+          borderColor: '#7798bf'
+        }]
+      },
+      options: {
+        legend: {
+          display: false
+        },
+        tooltips: {
+          callbacks: {
+            label: function(item) {
+              if (item.datasetIndex === 0) return 'Cumulative: ' + item.yLabel + '%';
+              else return 'Frequency: ' + item.yLabel + ' players';
             }
-          }, {
-            name: 'Cumulative',
-            type: 'line',
-            yAxis: 1,
-            data: cumul.map(function(p, i) {
-              return [ratingAt(i), p];
-            }),
-            color: Highcharts.Color(colors[11]).setOpacity(0.8).get('rgba'),
-            marker: {
-              radius: 1
+          }
+        },
+        scales: {
+          xAxes: [{
+            type: 'linear',
+            position: 'bottom',
+            ticks: {
+              stepSize: 100,
+              minRotation: 45
             },
-            shadow: true,
-            tooltip: {
-              valueSuffix: '%'
+            scaleLabel: {
+              display: true,
+              labelString: 'Glicko-2 Rating'
             }
           }],
-          chart: {
-            zoomType: 'xy',
-            alignTicks: false
-          },
-          plotOptions: {},
-          title: noText,
-          xAxis: {
-            type: 'category',
-            title: {
-              text: 'Glicko2 Rating'
+          yAxes: [{
+            type: 'linear',
+            position: 'left',
+            id: 'yFreq',
+            ticks: {
+              maxTicksLimit: 5
             },
-            labels: {
-              rotation: -45
-            },
-            gridLineWidth: 1,
-            tickInterval: 100,
-            plotLines: (function(v) {
-              var right = v > 1800;
-              return v ? [{
-                label: {
-                  text: 'Your rating',
-                  verticalAlign: 'top',
-                  align: right ? 'right' : 'left',
-                  y: 13,
-                  x: right ? -5 : 5,
-                  style: {
-                    color: colors[2]
-                  },
-                  rotation: -0
-                },
-                dashStyle: 'dash',
-                color: colors[2],
-                width: 3,
-                value: v
-              }] : [];
-            })(data.myRating)
-          },
-          yAxis: [{ // frequency
-            title: {
-              text: 'Players'
+            scaleLabel: {
+              display: true,
+              labelString: 'Players'
             }
-          }, { // cumulative
-            min: 0,
-            max: 100,
-            gridLineWidth: 0,
-            title: {
-              text: 'Cumulative'
+          }, {
+            type: 'linear',
+            position: 'right',
+            id: 'yCumul',
+            ticks: {
+              maxTicksLimit: 5,
+              stepSize: 25,
+              callback: function(value) {
+                return value + '%';
+              }
             },
-            labels: {
-              format: '{value}%'
-            },
-            opposite: true
+            scaleLabel: {
+              display: true,
+              labelString: 'Cumulative'
+            }
           }]
-        });
-      });
+        },
+        elements: {
+          point: {
+            radius: 0,
+            hitRadius: 10,
+            hoverRadius: 4
+          }
+        }
+      }
     });
   });
 };
