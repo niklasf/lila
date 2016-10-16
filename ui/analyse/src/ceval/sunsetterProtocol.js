@@ -16,17 +16,16 @@ module.exports = function(worker, opts) {
     }
     if (!work) return;
 
-    var depth, cp, mate, best, pv;
+    var matches = text.match(/^(\d+) ([-+]?\d+) \d+ \d+ (([\w@]+\s)*[\w@]+)\s*$/);
+    if (!matches) return;
 
-    var matches = text.match(/^(\d+) ([-+]?\d+) \d+ \d+ (.*)$/);
-    if (matches) {
-      depth = parseInt(matches[1], 10);
-      cp = parseInt(matches[2], 10);
-      pv = matches[3];
-      best = pv.split(' ')[0];
-    }
+    var depth = parseInt(matches[1], 10);
+    var cp = parseInt(matches[2], 10);
+    var pv = matches[3];
+    var best = pv.split(' ')[0];
 
     // transform mate scores
+    var mate;
     if (Math.abs(cp) > 20000) {
       mate = Math.sign(cp) * Math.floor(30000 - Math.abs(cp));
       cp = undefined;
