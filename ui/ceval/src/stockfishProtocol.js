@@ -26,8 +26,13 @@ module.exports = function(worker, opts) {
 
   var processOutput = function(text) {
     if (text.indexOf('bestmove ') === 0) {
+      console.log(text);
       if (!stopped) stopped = m.deferred();
       stopped.resolve(true);
+      if (curEval) {
+        curEval.stopped = true;
+        work.emit(curEval);
+      }
       return;
     }
     if (!work) return;
@@ -99,7 +104,8 @@ module.exports = function(worker, opts) {
       if (opts.hashSize) worker.send('setoption name Hash value ' + opts.hashSize());
       worker.send('setoption name MultiPV value ' + work.multiPv);
       worker.send(['position', 'fen', work.initialFen, 'moves'].concat(work.moves).join(' '));
-      worker.send('go depth ' + work.maxDepth);
+      if (work.maxDepth >= 99) worker.send('go infinite');
+      else worker.send('go movetime 2000 depth ' + work.maxDepth);
     },
     stop: function() {
       if (!stopped) {

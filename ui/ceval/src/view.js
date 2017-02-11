@@ -35,9 +35,7 @@ function localEvalInfo(ctrl, evs) {
   ] : [
     'Depth ' + (evs.client.depth || 0) + '/' + evs.client.maxDepth
   ];
-  if (ceval.canGoDeeper() && (
-      evs.client.depth >= (evs.client.maxDepth || ceval.effectiveMaxDepth())
-    ))
+  if (ceval.canGoDeeper() && (!evs.client || evs.client.stopped))
     t.push(m('a.deeper', {
       title: 'Go deeper',
       'data-icon': 'O',
@@ -145,7 +143,7 @@ module.exports = {
     }
     var mandatoryCeval = ctrl.mandatoryCeval && ctrl.mandatoryCeval();
     return m('div', {
-        class: 'ceval_box ' + (percent < 100 && instance.isComputing() ? 'computing' : '')
+        class: 'ceval_box ' + (eval.client && !eval.client.stopped ? 'computing' : '')
       },
       enabled ? m('div.bar', m('span', {
         class: threatMode ? 'threat' : '',
