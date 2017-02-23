@@ -119,15 +119,13 @@ case class Game(
     } yield a.zipAll(b, 0.millis, 0.millis).flatMap { case (x, y) => List(x, y) }.take(playedTurns).toVector
 
   def moveTimes(color: Color): Option[List[FiniteDuration]] =
-    clockHistory.flatMap { history =>
-      clock.map { clk =>
-        val clockTimes = history(color) :+ clk.remainingDuration(color)
-        0.millis :: (
-          clockTimes,
-          clockTimes.drop(1),
-          0.seconds +: Stream.continually(clk.increment.seconds) // no inc for first move
-        ).zipped.map(_ - _ + _).map(_ max 0.millis).toList
-      }
+    clockHistory.map { h =>
+      val clockTimes = h(color) :+ h.clock.remainingDuration(color)
+      0.millis :: (
+        clockTimes,
+        clockTimes.drop(1),
+        0.seconds +: Stream.continually(h.clock.increment.seconds) // no inc for first move
+      ).zipped.map(_ - _ + _).map(_ max 0.millis).toList
     } orElse binaryMoveTimes.map { binary =>
       val pivot = if (color == startColor) 0 else 1
       BinaryFormat.moveTime.read(binary, playedTurns).toList.zipWithIndex.collect {
@@ -209,9 +207,7 @@ case class Game(
         })
       },
       clockHistory = clock.map { clk =>
-        clockHistory.fold(ClockHistory(clk.remainingDuration(turnColor))) { history =>
-          history.record(turnColor)(clk.remainingDuration(turnColor))
-        }
+        clockHistory.fold(ClockHistory.empty(clk)) { _.record(turnColor)(clk) }
       },
       status = situation.status | status,
       clock = game.clock
@@ -698,16 +694,47 @@ object CastleLastMoveTime {
 }
 
 case class ClockHistory(
-    latest: FiniteDuration,
-    white: Vector[FiniteDuration] = Vector.empty,
-    black: Vector[FiniteDuration] = Vector.empty
+    clock: Clock,
+    whiteMoves: Int,
+    blackMoves: Int,
+    binaryWhite: ByteArray,
+    binaryBlack: ByteArray
 ) {
+
+  lazy val white = BinaryFormat.clockHistory.readSide(
+    clock.limit.seconds, clock.remainingDuration(White), binaryWhite, whiteMoves
+  ).pp("reading white")
+  lazy val black = BinaryFormat.clockHistory.readSide(
+    clock.limit.seconds, clock.remainingDuration(Black), binaryBlack, blackMoves
+  ).pp("reading black")
 
   def apply(color: Color): Vector[FiniteDuration] = color.fold(white, black)
 
-  def recordWhite(remaining: FiniteDuration) = copy(latest = remaining, black = black :+ latest)
-  def recordBlack(remaining: FiniteDuration) = copy(latest = remaining, white = white :+ latest)
+  def recordBlack(updatedClock: Clock) = copy(
+    clock = updatedClock,
+    blackMoves = blackMoves + 1,
+    binaryBlack = BinaryFormat.clockHistory.writeSide(clock.limit.seconds, updatedClock.remainingDuration(Black), (black :+ updatedClock.remainingDuration(Black)).pp("recording black"))
+  )
 
-  def record(color: Color)(remaining: FiniteDuration): ClockHistory =
-    color.fold(recordWhite _, recordBlack _)(remaining)
+  def recordWhite(updatedClock: Clock) = copy(
+    clock = updatedClock,
+    whiteMoves = whiteMoves + 1,
+    binaryWhite = BinaryFormat.clockHistory.writeSide(clock.limit.seconds, updatedClock.remainingDuration(White), (white :+ updatedClock.remainingDuration(White)).pp("recording white"))
+  )
+
+  def record(turnColor: Color)(updatedClock: Clock): ClockHistory =
+    turnColor.fold(recordWhite _, recordBlack _)(updatedClock)
+
+  def take(rewindedClock: Clock, wmoves: Int, bmoves: Int): ClockHistory = copy(
+    clock = rewindedClock,
+    whiteMoves = wmoves,
+    blackMoves = bmoves,
+    binaryWhite = BinaryFormat.clockHistory.writeSide(clock.limit.seconds, rewindedClock.remainingDuration(White), white.take(wmoves)),
+    binaryBlack = BinaryFormat.clockHistory.writeSide(clock.limit.seconds, rewindedClock.remainingDuration(Black), black.take(bmoves))
+  )
+}
+
+object ClockHistory {
+
+  def empty(clock: Clock) = ClockHistory(clock, 0, 0, ByteArray.empty, ByteArray.empty)
 }

@@ -98,13 +98,14 @@ object BSONHandlers {
         daysPerTurn = r intO daysPerTurn,
         binaryMoveTimes = r bytesO moveTimes,
         clockHistory = for {
-          clk <- gameClock
-          start = clk.limit.seconds
-          ew = clk.remainingDuration(White)
-          eb = clk.remainingDuration(Black)
-          bw <- r bytesO whiteClockHistory
+          clock <- gameClock
+          wb <- r bytesO whiteClockHistory
           bb <- r bytesO blackClockHistory
-        } yield BinaryFormat.clockHistory.read(start, ew, eb, bw, bb, r intD startedAtTurn, nbTurns),
+          startTurn = r intD startedAtTurn
+          ply = nbTurns - startTurn
+          wmoves = (if (startTurn % 2 == 0) ply + 1 else ply) / 2 - 1
+          bmoves = (if (startTurn % 2 == 1) ply + 1 else ply) / 2 - 1
+        } yield ClockHistory(clock, wmoves, bmoves, wb, bb),
         mode = Mode(r boolD rated),
         variant = realVariant,
         crazyData = (realVariant == Crazyhouse) option r.get[Crazyhouse.Data](crazyData),
@@ -141,8 +142,8 @@ object BSONHandlers {
       unmovedRooks -> o.unmovedRooks,
       daysPerTurn -> o.daysPerTurn,
       moveTimes -> o.binaryMoveTimes,
-      whiteClockHistory -> clockHistory(White, o.clockHistory, o.clock),
-      blackClockHistory -> clockHistory(Black, o.clockHistory, o.clock),
+      whiteClockHistory -> o.clockHistory.map(_.binaryWhite),
+      blackClockHistory -> o.clockHistory.map(_.binaryBlack),
       rated -> w.boolO(o.mode.rated),
       variant -> o.variant.exotic.option(o.variant.id).map(w.int),
       crazyData -> o.crazyData,
@@ -158,11 +159,6 @@ object BSONHandlers {
       analysed -> w.boolO(o.metadata.analysed)
     )
   }
-
-  private def clockHistory(color: Color, clockHistory: Option[ClockHistory], clock: Option[Clock]): Option[ByteArray] = for {
-    history <- clockHistory
-    clk <- clock
-  } yield BinaryFormat.clockHistory.writeSide(clk.limit.seconds, clk.remainingDuration(color), history(color))
 
   private[game] def clockBSONReader(since: DateTime, whiteBerserk: Boolean, blackBerserk: Boolean) = new BSONReader[BSONBinary, Color => Clock] {
     def read(bin: BSONBinary) = BinaryFormat.clock(since).read(

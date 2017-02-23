@@ -51,11 +51,7 @@ object Rewind {
         clockHistory = for {
           history <- game.clockHistory
           clk <- newClock
-        } yield ClockHistory(
-          clk.remainingDuration(rewindedSituation.color),
-          history.white.take(rewindedPlayerMoves(White) - 1),
-          history.black.take(rewindedPlayerMoves(Black) - 1)
-        ),
+        } yield history.take(clk, rewindedPlayerMoves(White) - 1, rewindedPlayerMoves(Black) - 1),
         crazyData = rewindedSituation.board.crazyData,
         status = game.status,
         clock = newClock
