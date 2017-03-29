@@ -55,6 +55,7 @@
 @moreJs = {
 @jsAt(s"compiled/lichess.lobby${isProd??(".min")}.js", async = true)
 @embedJs {
+// @@license magnet:?xt=urn:btih:e95b018ef3580986a04669f1b5879592219e2a7a&dn=public-domain.txt
 lichess_lobby = {
 perfIcons: @nonPuzzlePerfTypeNameIcons,
 data: @Html(J.stringify(data)),
@@ -66,6 +67,7 @@ currentGame: @currentGame.fold(Html("null")) { cg =>
 },
 i18n: @jsI18n()
 };
+// @@license-end
 }
 }
 

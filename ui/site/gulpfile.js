@@ -7,6 +7,15 @@ var streamify = require('gulp-streamify');
 var concat = require('gulp-concat');
 var request = require('request');
 var download = require('gulp-download-stream');
+var transform = require('gulp-transform');
+
+function librejs(contents) {
+  return [
+    '// @license magnet:?xt=urn:btih:0b31508aeb0634b347b8270c7bee4d411b5d4109&dn=agpl-3.0.txt hello world',
+    contents,
+    '// @license-end'
+  ].join('\n');
+}
 
 var destination = '../../public/compiled/';
 var onError = function(error) {
@@ -70,6 +79,7 @@ gulp.task('prod-source', function() {
     .on('error', onError)
     .pipe(source('lichess.site.source.min.js'))
     .pipe(streamify(uglify()))
+    //.pipe(transform(librejs))
     .pipe(gulp.dest('./dist'));
 });
 
@@ -79,24 +89,26 @@ gulp.task('dev-source', function() {
   }).bundle()
     .on('error', onError)
     .pipe(source('lichess.site.source.js'))
+    //.pipe(transform(librejs))
     .pipe(gulp.dest('./dist'));
 });
 
 function makeBundle(filename) {
   return function() {
     return gulp.src([
-      '../../public/javascripts/vendor/jquery.min.js',
-      './dist/jquery.fill.js',
-      '../../public/vendor/moment/min/moment.min.js',
-      './dep/powertip.min.js',
-      './dep/howler.min.js',
-      './dep/mousetrap.min.js',
-      './dep/hoverintent.min.js',
+//      '../../public/javascripts/vendor/jquery.min.js',
+//      './dist/jquery.fill.js',
+//      '../../public/vendor/moment/min/moment.min.js',
+//      './dep/powertip.min.js',
+//      './dep/howler.min.js',
+//      './dep/mousetrap.min.js',
+//      './dep/hoverintent.min.js',
       './dist/' + filename,
-      './dist/ab.js',
-      '../../public/javascripts/ga.js'
+//      './dist/ab.js',
+//      '../../public/javascripts/ga.js'
     ])
       .pipe(concat(filename.replace('source.', '')))
+      .pipe(transform(librejs))
       .pipe(gulp.dest(destination));
   };
 }
