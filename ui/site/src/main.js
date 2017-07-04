@@ -752,14 +752,7 @@ lichess.topMenuIntent = function() {
     return api;
   })();
 
-  lichess.globalTrans = function() {
-    var str = window.lichess_translations && lichess_translations[arguments[0]];
-    if (!str) return arguments[0];
-    Array.prototype.slice.call(arguments, 1).forEach(function(arg) {
-      str = str.replace('%s', arg);
-    });
-    return str;
-  };
+  lichess.globalTrans = lichess.trans(window.lichess_translations);
 
   lichess.widget("watchers", {
     _create: function() {
@@ -767,18 +760,19 @@ lichess.topMenuIntent = function() {
       this.number = this.element.find("span.number");
     },
     set: function(data) {
+      console.log(lichess.trans);
       var self = this;
       if (!data) {
         self.element.addClass('hidden');
         return;
       }
       if (self.number.length) self.number.text(data.nb);
-      if (data.users) {
+      /* if (data.users) {
         var tags = data.users.map($.userLink);
         if (data.anons === 1) tags.push('Anonymous');
         else if (data.anons) tags.push('Anonymous(' + data.anons + ')');
         self.list.html(tags.join(', '));
-      } else if (!self.number.length) self.list.html(data.nb + ' players in the chat');
+      } else if (!self.number.length) */ self.list.text(lichess.globalTrans.plural('nbPlayersInTheChat', data.nb));
 
       self.element.removeClass('hidden');
     }
