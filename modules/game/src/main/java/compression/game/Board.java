@@ -77,13 +77,12 @@ final class Board {
         this.byRole[Role.KING.index] &= capture;
         this.byColor[Color.BLACK] &= capture;
         this.byColor[Color.WHITE] &= capture;
-        this.occupied &= capture;
 
         // Put new piece.
         long mask = 1L << square;
         this.byRole[role.index] ^= mask;
         this.byColor[this.turn] ^= mask;
-        this.occupied ^= mask;
+        this.occupied |= mask;
     }
 
     public void play(Move move) {
