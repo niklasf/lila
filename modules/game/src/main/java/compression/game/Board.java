@@ -3,48 +3,31 @@ package org.lichess.compression.game;
 import java.util.ArrayList;
 
 final class Board {
-    long pawns;
-    long knights;
-    long bishops;
-    long rooks;
-    long queens;
-    long kings;
+    final long byRole[] = {
+        0xff00000000ff00L, // pawn
+        0x4200000000000042L, // knight
+        0x2400000000000024L, // bishop
+        0x8100000000000081L, // rook
+        0x800000000000008L, // queen
+        0x1000000000000010L // king
+    };
 
-    long white;
-    long black;
-    long occupied;
+    final long byColor[] = {
+        0xffff000000000000L, // black
+        0xffffL, // white
+    };
 
-    boolean turn; // prob should be int for idx into white/black bitmaps.
-    int epSquare;
-    long castlingRights;
+    private long occupied = 0xffff00000000ffffL;
 
-    public Board() {
-        this.pawns = 0xff00000000ff00L;
-        this.knights = 0x4200000000000042L;
-        this.bishops = 0x2400000000000024L;
-        this.rooks = 0x8100000000000081L;
-        this.queens = 0x800000000000008L;
-        this.kings = 0x1000000000000010L;
+    int turn = Color.WHITE;
+    int epSquare = 0;
+    long castlingRights = 0x8100000000000081L;
 
-        this.white = 0xffffL;
-        this.black = 0xffff000000000000L;
-        this.occupied = 0xffff00000000ffffL;
-
-        this.turn = true;
-        this.epSquare = 0;
-        this.castlingRights = this.rooks;
-    }
+    public Board() { }
 
     public Board(Board board) {
-        this.pawns = board.pawns;
-        this.knights = board.knights;
-        this.bishops = board.bishops;
-        this.rooks = board.rooks;
-        this.queens = board.queens;
-        this.kings = board.kings;
-
-        this.white = board.white;
-        this.black = board.black;
+        System.arraycopy(board.byRole, 0, this.byRole, 0, 6);
+        System.arraycopy(board.byColor, 0, this.byColor, 0, 2);
         this.occupied = board.occupied;
 
         this.turn = board.turn;
@@ -54,17 +37,17 @@ final class Board {
 
     Board(long pawns, long knights, long bishops, long rooks, long queens, long kings,
           long white, long black,
-          boolean turn, int epSquare, long castlingRights) {
+          int turn, int epSquare, long castlingRights) {
 
-        this.pawns = pawns;
-        this.knights = knights;
-        this.bishops = bishops;
-        this.rooks = rooks;
-        this.queens = queens;
-        this.kings = kings;
+        this.byRole[Role.PAWN.index] = pawns;
+        this.byRole[Role.KNIGHT.index] = knights;
+        this.byRole[Role.BISHOP.index] = bishops;
+        this.byRole[Role.ROOK.index] = rooks;
+        this.byRole[Role.QUEEN.index] = queens;
+        this.byRole[Role.KING.index] = kings;
 
-        this.white = white;
-        this.black = black;
+        this.byColor[Color.BLACK] = black;
+        this.byColor[Color.WHITE] = white;
         this.occupied = white | black;
 
         this.turn = turn;
@@ -76,79 +59,30 @@ final class Board {
         return Bitboard.contains(this.occupied, square);
     }
 
-    private void discard(int square) {
+    private void discard(int square, int color, Role role) {
         long mask = ~(1L << square);
-
-        this.pawns &= mask;
-        this.knights &= mask;
-        this.bishops &= mask;
-        this.rooks &= mask;
-        this.queens &= mask;
-        this.kings &= mask;
-        this.white &= mask;
-        this.black &= mask;
-        this.occupied &= mask;
-    }
-
-    private void discard(int square, Role role) {
-        long mask = ~(1L << square);
-
-        switch (role) {
-            case PAWN:
-                this.pawns &= mask;
-                break;
-            case KNIGHT:
-                this.knights &= mask;
-                break;
-            case BISHOP:
-                this.bishops &= mask;
-                break;
-            case ROOK:
-                this.rooks &= mask;
-                break;
-            case QUEEN:
-                this.queens &= mask;
-                break;
-            case KING:
-                this.kings &= mask;
-                break;
-        }
-
-        if (this.turn) this.white &= mask;
-        else this.black &= mask;
-
+        this.byRole[role.index] &= mask;
+        this.byColor[color] &= mask;
         this.occupied &= mask;
     }
 
     private void put(int square, Role role) {
-        discard(square);
+        // Potentially discard captures piece.
+        long capture = ~(1L << square);
+        this.byRole[Role.PAWN.index] &= capture;
+        this.byRole[Role.KNIGHT.index] &= capture;
+        this.byRole[Role.BISHOP.index] &= capture;
+        this.byRole[Role.ROOK.index] &= capture;
+        this.byRole[Role.QUEEN.index] &= capture;
+        this.byRole[Role.KING.index] &= capture;
+        this.byColor[Color.BLACK] &= capture;
+        this.byColor[Color.WHITE] &= capture;
+        this.occupied &= capture;
 
+        // Put new piece.
         long mask = 1L << square;
-
-        switch (role) {
-            case PAWN:
-                this.pawns ^= mask;
-                break;
-            case KNIGHT:
-                this.knights ^= mask;
-                break;
-            case BISHOP:
-                this.bishops ^= mask;
-                break;
-            case ROOK:
-                this.rooks ^= mask;
-                break;
-            case QUEEN:
-                this.queens ^= mask;
-                break;
-            case KING:
-                this.kings ^= mask;
-                break;
-        }
-
-        if (this.turn) this.white ^= mask;
-        else this.black ^= mask;
-
+        this.byRole[role.index] ^= mask;
+        this.byColor[this.turn] ^= mask;
         this.occupied ^= mask;
     }
 
@@ -158,12 +92,12 @@ final class Board {
         switch (move.type) {
             case Move.NORMAL:
                 if (move.role == Role.PAWN && Math.abs(move.from - move.to) == 16) {
-                    this.epSquare = move.from + (this.turn ? 8 : -8);
+                    this.epSquare = move.from + (this.turn == Color.WHITE ? 8 : -8);
                 }
 
                 if (this.castlingRights != 0) {
                     if (move.role == Role.KING) {
-                        this.castlingRights &= Bitboard.RANKS[this.turn ? 7 : 0];
+                        this.castlingRights &= Bitboard.RANKS[this.turn == Color.WHITE ? 7 : 0];
                     } else if (move.role == Role.ROOK) {
                         this.castlingRights &= ~(1L << move.from);
                     }
@@ -173,50 +107,46 @@ final class Board {
                     }
                 }
 
-                discard(move.from, move.role);
+                discard(move.from, this.turn, move.role);
                 put(move.to, move.promotion != null ? move.promotion : move.role);
                 break;
 
             case Move.CASTLING:
-                this.castlingRights &= Bitboard.RANKS[this.turn ? 7 : 0];
+                this.castlingRights &= Bitboard.RANKS[this.turn == Color.WHITE ? 7 : 0];
                 int rookTo = Square.combine(move.to < move.from ? Square.D1 : Square.F1, move.to);
                 int kingTo = Square.combine(move.to < move.from ? Square.C1 : Square.G1, move.from);
-                discard(move.from, Role.KING);
-                discard(move.to, Role.ROOK);
+                discard(move.from, this.turn, Role.KING);
+                discard(move.to, this.turn, Role.ROOK);
                 put(rookTo, Role.ROOK);
                 put(kingTo, Role.KING);
                 break;
 
             case Move.EN_PASSANT:
-                discard(Square.combine(move.to, move.from));
-                discard(move.from, Role.PAWN);
+                discard(Square.combine(move.to, move.from), this.turn ^ 1, Role.PAWN);
+                discard(move.from, this.turn, Role.PAWN);
                 put(move.to, Role.PAWN);
                 break;
         }
 
-        this.turn = !this.turn;
+        this.turn ^= 1;
     }
 
     private long us() {
-        return byColor(this.turn);
+        return byColor[this.turn];
     }
 
     private long them() {
-        return byColor(!this.turn);
+        return byColor[this.turn ^ 1];
     }
 
-    private long byColor(boolean white) {
-        return white ? this.white : this.black;
-    }
-
-    private int king(boolean white) {
-        return Bitboard.lsb(this.kings & byColor(white));
+    private int king(int color) {
+        return Bitboard.lsb(this.byRole[Role.KING.index] & byColor[color]);
     }
 
     private long sliderBlockers(int king) {
         long snipers = them() & (
-            Bitboard.rookAttacks(king, 0) & (this.rooks ^ this.queens) |
-            Bitboard.bishopAttacks(king, 0) & (this.bishops ^ this.queens));
+            Bitboard.rookAttacks(king, 0) & (this.byRole[Role.ROOK.index] ^ this.byRole[Role.QUEEN.index]) |
+            Bitboard.bishopAttacks(king, 0) & (this.byRole[Role.BISHOP.index] ^ this.byRole[Role.QUEEN.index]));
 
         long blockers = 0;
 
@@ -231,20 +161,20 @@ final class Board {
     }
 
     public boolean isCheck() {
-        return attacksTo(king(this.turn), !this.turn) != 0;
+        return attacksTo(king(this.turn), this.turn ^ 1) != 0;
     }
 
-    private long attacksTo(int sq, boolean attacker) {
+    private long attacksTo(int sq, int attacker) {
         return attacksTo(sq, attacker, this.occupied);
     }
 
-    private long attacksTo(int sq, boolean attacker, long occupied) {
-        return byColor(attacker) & (
-            Bitboard.rookAttacks(sq, occupied) & (this.rooks ^ this.queens) |
-            Bitboard.bishopAttacks(sq, occupied) & (this.bishops ^ this.queens) |
-            Bitboard.KNIGHT_ATTACKS[sq] & this.knights |
-            Bitboard.KING_ATTACKS[sq] & this.kings |
-            Bitboard.pawnAttacks(!attacker, sq) & this.pawns);
+    private long attacksTo(int sq, int attacker, long occupied) {
+        return byColor[attacker] & (
+            Bitboard.rookAttacks(sq, occupied) & (this.byRole[Role.ROOK.index] ^ this.byRole[Role.QUEEN.index]) |
+            Bitboard.bishopAttacks(sq, occupied) & (this.byRole[Role.BISHOP.index] ^ this.byRole[Role.QUEEN.index]) |
+            Bitboard.KNIGHT_ATTACKS[sq] & this.byRole[Role.KNIGHT.index] |
+            Bitboard.KING_ATTACKS[sq] & this.byRole[Role.KING.index] |
+            Bitboard.pawnAttacks(attacker ^ 1, sq) & this.byRole[Role.PAWN.index]);
     }
 
     public void legalMoves(ArrayList<Move> moves) {
@@ -253,7 +183,7 @@ final class Board {
         int king = king(this.turn);
         boolean hasEp = genEnPassant(moves);
 
-        long checkers = attacksTo(king, !this.turn);
+        long checkers = attacksTo(king, this.turn ^ 1);
         if (checkers == 0) {
             long target = ~us();
             genNonKing(target, moves);
@@ -273,7 +203,7 @@ final class Board {
         genPawn(mask, moves);
 
         // Knights.
-        long knights = us() & this.knights;
+        long knights = us() & this.byRole[Role.KNIGHT.index];
         while (knights != 0) {
             int from = Bitboard.lsb(knights);
             long targets = Bitboard.KNIGHT_ATTACKS[from] & mask;
@@ -286,7 +216,7 @@ final class Board {
         }
 
         // Bishops.
-        long bishops = us() & this.bishops;
+        long bishops = us() & this.byRole[Role.BISHOP.index];
         while (bishops != 0) {
             int from = Bitboard.lsb(bishops);
             long targets = Bitboard.bishopAttacks(from, this.occupied) & mask;
@@ -299,7 +229,7 @@ final class Board {
         }
 
         // Rooks.
-        long rooks = us() & this.rooks;
+        long rooks = us() & this.byRole[Role.ROOK.index];
         while (rooks != 0) {
             int from = Bitboard.lsb(rooks);
             long targets = Bitboard.rookAttacks(from, this.occupied) & mask;
@@ -312,7 +242,7 @@ final class Board {
         }
 
         // Queens.
-        long queens = us() & this.queens;
+        long queens = us() & this.byRole[Role.QUEEN.index];
         while (queens != 0) {
             int from = Bitboard.lsb(queens);
             long targets = Bitboard.queenAttacks(from, this.occupied) & mask;
@@ -329,7 +259,7 @@ final class Board {
         long targets = Bitboard.KING_ATTACKS[king] & mask;
         while (targets != 0) {
             int to = Bitboard.lsb(targets);
-            if (attacksTo(to, !this.turn) == 0) {
+            if (attacksTo(to, this.turn ^ 1) == 0) {
                 moves.add(Move.normal(this, Role.KING, king, isOccupied(to), to));
             }
             targets ^= 1L << to;
@@ -338,7 +268,7 @@ final class Board {
 
     private void genEvasions(int king, long checkers, ArrayList<Move> moves) {
         // Checks by these sliding pieces can maybe be blocked.
-        long sliders = checkers & (this.bishops ^ this.rooks ^ this.queens);
+        long sliders = checkers & (this.byRole[Role.BISHOP.index] ^ this.byRole[Role.ROOK.index] ^ this.byRole[Role.QUEEN.index]);
 
         // Collect attacked squares that the king can not escape to.
         long attacked = 0;
@@ -359,7 +289,7 @@ final class Board {
 
     private void genPawn(long mask, ArrayList<Move> moves) {
         // Pawn captures (except en passant).
-        long capturers = us() & this.pawns;
+        long capturers = us() & this.byRole[Role.PAWN.index];
         while (capturers != 0) {
             int from = Bitboard.lsb(capturers);
             long targets = Bitboard.pawnAttacks(this.turn, from) & them() & mask;
@@ -373,35 +303,35 @@ final class Board {
 
         // Normal pawn moves.
         long singleMoves =
-            ~this.occupied & (this.turn ?
-                ((this.white & this.pawns) << 8) :
-                ((this.black & this.pawns) >>> 8));
+            ~this.occupied & (this.turn == Color.WHITE ?
+                ((this.byColor[Color.WHITE] & this.byRole[Role.PAWN.index]) << 8) :
+                ((this.byColor[Color.BLACK] & this.byRole[Role.PAWN.index]) >>> 8));
 
         long doubleMoves =
             ~this.occupied &
-            (this.turn ? (singleMoves << 8) : (singleMoves >>> 8)) &
-            Bitboard.RANKS[this.turn ? 3 : 4];
+            (this.turn == Color.WHITE ? (singleMoves << 8) : (singleMoves >>> 8)) &
+            Bitboard.RANKS[this.turn == Color.WHITE ? 3 : 4];
 
         singleMoves &= mask;
         doubleMoves &= mask;
 
         while (singleMoves != 0) {
             int to = Bitboard.lsb(singleMoves);
-            int from = to + (this.turn ? -8 : 8);
+            int from = to + (this.turn == Color.WHITE ? -8 : 8);
             addPawnMoves(from, false, to, moves);
             singleMoves ^= 1L << to;
         }
 
         while (doubleMoves != 0) {
             int to = Bitboard.lsb(doubleMoves);
-            int from = to + (this.turn ? -16: 16);
+            int from = to + (this.turn == Color.WHITE ? -16: 16);
             moves.add(Move.normal(this, Role.PAWN, from, false, to));
             doubleMoves ^= 1L << to;
         }
     }
 
     private void addPawnMoves(int from, boolean capture, int to, ArrayList<Move> moves) {
-        if (Square.rank(to) == (this.turn ? 7 : 0)) {
+        if (Square.rank(to) == (this.turn == Color.WHITE ? 7 : 0)) {
             moves.add(Move.promotion(this, from, capture, to, Role.QUEEN));
             moves.add(Move.promotion(this, from, capture, to, Role.KNIGHT));
             moves.add(Move.promotion(this, from, capture, to, Role.ROOK));
@@ -415,7 +345,7 @@ final class Board {
         if (this.epSquare == 0) return false;
 
         boolean found = false;
-        long pawns = us() & this.pawns & Bitboard.pawnAttacks(!this.turn, this.epSquare);
+        long pawns = us() & this.byRole[Role.PAWN.index] & Bitboard.pawnAttacks(this.turn ^ 1, this.epSquare);
         while (pawns != 0) {
             int pawn = Bitboard.lsb(pawns);
             moves.add(Move.enPassant(this, pawn, this.epSquare));
@@ -426,7 +356,7 @@ final class Board {
     }
 
     private void genCastling(int king, ArrayList<Move> moves) {
-        long rooks = this.castlingRights & Bitboard.RANKS[this.turn ? 0 : 7];
+        long rooks = this.castlingRights & Bitboard.RANKS[this.turn == Color.WHITE ? 0 : 7];
         while (rooks != 0) {
             int rook = Bitboard.lsb(rooks);
             long path = Bitboard.BETWEEN[king][rook];
@@ -435,7 +365,7 @@ final class Board {
                 long kingPath = Bitboard.BETWEEN[king][kingTo] | (1L << kingTo) | (1L << king);
                 while (kingPath != 0) {
                     int sq = Bitboard.lsb(kingPath);
-                    if (attacksTo(sq, !this.turn, this.occupied ^ (1L << king)) != 0) {
+                    if (attacksTo(sq, this.turn ^ 1, this.occupied ^ (1L << king)) != 0) {
                         break;
                     }
                     kingPath ^= 1L << sq;
@@ -461,8 +391,8 @@ final class Board {
                 occupied ^= (1L << Square.combine(move.to, move.from));
                 occupied |= (1L << move.to);
                 return
-                    (Bitboard.rookAttacks(king, occupied) & them() & (this.rooks ^ this.queens)) == 0 &&
-                    (Bitboard.bishopAttacks(king, occupied) & them() & (this.bishops ^ this.queens)) == 0;
+                    (Bitboard.rookAttacks(king, occupied) & them() & (this.byRole[Role.ROOK.index] ^ this.byRole[Role.QUEEN.index])) == 0 &&
+                    (Bitboard.bishopAttacks(king, occupied) & them() & (this.byRole[Role.BISHOP.index] ^ this.byRole[Role.QUEEN.index])) == 0;
 
             default:
                 return true;

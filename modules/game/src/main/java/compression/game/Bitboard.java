@@ -15,8 +15,7 @@ class Bitboard {
 
     public static final long KNIGHT_ATTACKS[] = new long[64];
     public static final long KING_ATTACKS[] = new long[64];
-    public static final long WHITE_PAWN_ATTACKS[] = new long[64];
-    public static final long BLACK_PAWN_ATTACKS[] = new long[64];
+    public static final long PAWN_ATTACKS[][] = new long[2][64];
 
     public static final long BETWEEN[][] = new long[64][64];
     public static final long RAYS[][] = new long[64][64];
@@ -60,8 +59,8 @@ class Bitboard {
         for (int sq = 0; sq < 64; sq++) {
             KNIGHT_ATTACKS[sq] = slidingAttacks(sq, Bitboard.ALL, KNIGHT_DELTAS);
             KING_ATTACKS[sq] = slidingAttacks(sq, Bitboard.ALL, KING_DELTAS);
-            WHITE_PAWN_ATTACKS[sq] = slidingAttacks(sq, Bitboard.ALL, WHITE_PAWN_DELTAS);
-            BLACK_PAWN_ATTACKS[sq] = slidingAttacks(sq, Bitboard.ALL, BLACK_PAWN_DELTAS);
+            PAWN_ATTACKS[Color.BLACK][sq] = slidingAttacks(sq, Bitboard.ALL, BLACK_PAWN_DELTAS);
+            PAWN_ATTACKS[Color.WHITE][sq] = slidingAttacks(sq, Bitboard.ALL, WHITE_PAWN_DELTAS);
 
             initMagics(sq, Magic.ROOK[sq], 12, ROOK_DELTAS);
             initMagics(sq, Magic.BISHOP[sq], 9, BISHOP_DELTAS);
@@ -104,8 +103,8 @@ class Bitboard {
         return bishopAttacks(square, occupied) ^ rookAttacks(square, occupied);
     }
 
-    public static long pawnAttacks(boolean white, int square) {
-        return (white ? WHITE_PAWN_ATTACKS : BLACK_PAWN_ATTACKS)[square];
+    public static long pawnAttacks(int color, int square) {
+        return PAWN_ATTACKS[color][square];
     }
 
     public static int lsb(long b) {

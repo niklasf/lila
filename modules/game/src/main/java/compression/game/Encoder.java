@@ -36,12 +36,12 @@ public class Encoder {
 
             if (pgnMove.startsWith("O-O-O")) {
                 role = Role.KING;
-                from = board.kings;
-                to = Bitboard.lsb(board.rooks & Bitboard.RANKS[board.turn ? 0 : 7]);
+                from = board.byRole[Role.KING.index];
+                to = Bitboard.lsb(board.byRole[Role.ROOK.index] & Bitboard.RANKS[board.turn == Color.WHITE ? 0 : 7]);
             } else if (pgnMove.startsWith("O-O")) {
                 role = Role.KING;
-                from = board.kings;
-                to = Bitboard.msb(board.rooks & Bitboard.RANKS[board.turn ?  0 : 7]);
+                from = board.byRole[Role.KING.index];
+                to = Bitboard.msb(board.byRole[Role.ROOK.index] & Bitboard.RANKS[board.turn == Color.WHITE ?  0 : 7]);
             } else {
                 Matcher matcher = SAN_PATTERN.matcher(pgnMove);
                 if (!matcher.matches()) return null;
