@@ -67,16 +67,12 @@ final class Board {
     }
 
     private void put(int square, Role role) {
-        // Potentially discard captures piece.
-        long capture = ~(1L << square);
-        this.byRole[Role.PAWN.index] &= capture;
-        this.byRole[Role.KNIGHT.index] &= capture;
-        this.byRole[Role.BISHOP.index] &= capture;
-        this.byRole[Role.ROOK.index] &= capture;
-        this.byRole[Role.QUEEN.index] &= capture;
-        this.byRole[Role.KING.index] &= capture;
-        this.byColor[Color.BLACK] &= capture;
-        this.byColor[Color.WHITE] &= capture;
+        // Potentially discard captured piece.
+        if (isOccupied(square)) {
+            long capture = ~(1L << square);
+            for (int i = 0; i < 6; i++) this.byRole[i] &= capture;
+            for (int i = 0; i < 2; i++) this.byColor[i] &= capture;
+        }
 
         // Put new piece.
         long mask = 1L << square;
