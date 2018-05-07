@@ -10,9 +10,5 @@ case class Nonce(value: String) extends AnyVal {
 }
 
 object Nonce {
-  def random: Nonce = {
-    val bytes = new Array[Byte](15)
-    new SecureRandom().nextBytes(bytes)
-    Nonce(bytes.toBase64)
-  }
+  def random: Nonce = Nonce(Random.secureString(20))
 }
