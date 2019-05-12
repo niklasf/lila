@@ -3,12 +3,12 @@ import { Chessground } from 'chessground';
 import { Config as CgConfig } from 'chessground/config';
 
 export default function(ctrl) {
-  return h('div.cg-board-wrap', {
+  return h('div.cg-board-outer', h('div', h('div.cg-board-wrap', {
     hook: {
       insert: vnode => ctrl.ground(Chessground((vnode.elm as HTMLElement), makeConfig(ctrl))),
       destroy: _ => ctrl.ground().destroy()
     }
-  });
+  })));
 }
 
 function makeConfig(ctrl): CgConfig {

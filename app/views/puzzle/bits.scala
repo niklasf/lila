@@ -11,13 +11,17 @@ object bits {
 
   private val dataLastmove = attr("data-lastmove")
 
-  def daily(p: lila.puzzle.Puzzle, fen: String, lastMove: String) = a(
-    href := routes.Puzzle.daily(),
-    cls := "mini-board cg-board-wrap parse-fen is2d",
-    dataColor := p.color.name,
-    dataFen := fen,
-    dataLastmove := lastMove
-  )(div(cls := "cg-board"))
+  def daily(p: lila.puzzle.Puzzle, fen: String, lastMove: String) = div(cls := "cg-board-outer")(
+    div(
+      a(
+        href := routes.Puzzle.daily(),
+        cls := "mini-board cg-board-wrap parse-fen is2d",
+        dataColor := p.color.name,
+        dataFen := fen,
+        dataLastmove := lastMove
+      )(div(cls := "cg-board"))
+    )
+  )
 
   def jsI18n()(implicit ctx: Context) = i18nJsObject(translations)
 

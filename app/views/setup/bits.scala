@@ -23,12 +23,16 @@ private object bits {
         a(cls := "board_editor", href := url)(
           span(cls := "preview")(
             validFen.map { vf =>
-              div(
-                cls := "mini-board cg-board-wrap parse-fen is2d",
-                dataColor := vf.color.name,
-                dataFen := vf.fen.value,
-                dataResizable := "1"
-              )(div(cls := "cg-board"))
+              div(cls := "cg-board-outer")(
+                div(
+                  div(
+                    cls := "mini-board cg-board-wrap parse-fen is2d",
+                    dataColor := vf.color.name,
+                    dataFen := vf.fen.value,
+                    dataResizable := "1"
+                  )(div(cls := "cg-board"))
+                )
+              )
             }
           )
         )

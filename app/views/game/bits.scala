@@ -21,11 +21,15 @@ object bits {
       vstext(pov)(ctx.some)
     )
 
-  def miniBoard(fen: chess.format.FEN, color: chess.Color = chess.White): Frag = div(
-    cls := "mini-board parse-fen cg-board-wrap is2d",
-    dataColor := color.name,
-    dataFen := fen.value
-  )(div(cls := "cg-board"))
+  def miniBoard(fen: chess.format.FEN, color: chess.Color = chess.White): Frag = div(cls := "cg-board-outer")(
+    div(
+      div(
+        cls := "mini-board parse-fen cg-board-wrap is2d",
+        dataColor := color.name,
+        dataFen := fen.value
+      )(div(cls := "cg-board"))
+    )
+  )
 
   def gameIcon(game: Game): Char = game.perfType match {
     case _ if game.fromPosition => '*'

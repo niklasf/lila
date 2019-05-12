@@ -15,7 +15,7 @@ function miniPairing(ctrl) {
       href: '/' + game.id + '/' + game.orient,
       class: ctrl.data.host.gameId === game.id ? 'host' : ''
     }, [
-      m('span', {
+      m('div.cg-board-outer', m('div', m('span', {
         class: 'mini-board mini-board-' + game.id + ' parse-fen is2d',
         'data-color': game.orient,
         'data-fen': game.fen,
@@ -23,7 +23,7 @@ function miniPairing(ctrl) {
         config: function(el, isUpdate) {
           if (!isUpdate) lichess.parseFen($(el));
         }
-      }, boardContent),
+      }, boardContent))),
       m('span.vstext', [
         m('span.vstext__pl', [
           util.playerVariant(ctrl, player).name,

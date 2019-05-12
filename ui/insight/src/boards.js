@@ -5,7 +5,7 @@ function miniGame(game) {
     key: game.id,
     href: '/' + game.id + (game.color === 'white' ? '' : '/black')
   }, [
-    m('span', {
+    m('div.cg-board-outer', m('div', m('span', {
       class: 'mini-board cg-board-wrap mini-board-' + game.id + ' parse-fen is2d',
       'data-color': game.color,
       'data-fen': game.fen,
@@ -13,7 +13,7 @@ function miniGame(game) {
       config: function(el, isUpdate) {
         if (!isUpdate) lichess.parseFen($(el));
       }
-    }, m('div-cg-board')),
+    }, m('div-cg-board')))),
     m('span.vstext', [
       m('span.vstext__pl', [
         game.user1.name,

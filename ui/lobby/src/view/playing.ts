@@ -14,7 +14,7 @@ function timer(pov) {
 }
 
 export default function(ctrl: LobbyController) {
-  return h('div.now-playing',
+  return h('div.cg-board-outer', h('div', h('div.now-playing',
     ctrl.data.nowPlaying.map(function(pov) {
       return h('a.' + pov.variant.key + (pov.isMyTurn ? '.my_turn' : ''), {
         key: pov.gameId,
@@ -50,5 +50,5 @@ export default function(ctrl: LobbyController) {
             }))
         ])
       ]);
-    }));
+    }))));
 }

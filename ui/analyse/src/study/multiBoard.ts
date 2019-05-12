@@ -146,7 +146,7 @@ function uciToLastMove(lm?: string): Key[] | undefined {
 }
 
 function makeCg(preview: ChapterPreview): VNode {
-  return h('div.mini-board.cg-board-wrap', {
+  return h('div.cg-board-outer', h('div', h('div.mini-board.cg-board-wrap', {
     hook: {
       insert(vnode) {
         const cg = Chessground(vnode.elm as HTMLElement, {
@@ -171,5 +171,5 @@ function makeCg(preview: ChapterPreview): VNode {
         vnode.data!.cp = old.data!.cp;
       }
     }
-  }, [h('div.cg-board')])
+  }, [h('div.cg-board')])))
 }

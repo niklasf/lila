@@ -38,8 +38,12 @@ trait ChessgroundHelper {
     }
   )
 
-  private def wrap(content: Frag): Frag = div(cls := "cg-board-wrap")(
-    div(cls := "cg-board")(content)
+  private def wrap(content: Frag): Frag = div(cls := "cg-board-outer")(
+    div(
+      div(cls := "cg-board-wrap")(
+        div(cls := "cg-board")(content)
+      )
+    )
   )
 
   lazy val miniBoardContent = wrap("")

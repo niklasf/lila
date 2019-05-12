@@ -44,7 +44,7 @@ export function miniBoard(game) {
       }
     }
   }, [
-    h('div.cg-board-wrap')
+    h('div.cg-board-outer', h('div', h('div.cg-board-wrap')))
   ]);
 }
 
