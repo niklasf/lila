@@ -4,7 +4,7 @@ import { view as renderConfig } from './explorerConfig';
 import { bind, dataIcon } from '../util';
 import { winnerOf } from './explorerUtil';
 import AnalyseCtrl from '../ctrl';
-import { isOpening, isTablebase, TablebaseMoveStats, OpeningMoveStats, OpeningGame } from './interfaces';
+import { isOpening, isTablebase, isChessdb, TablebaseMoveStats, OpeningMoveStats, OpeningGame } from './interfaces';
 
 function resultBar(move: OpeningMoveStats): VNode {
   const sum = move.white + move.draws + move.black;
@@ -236,11 +236,17 @@ function showGameEnd(ctrl: AnalyseCtrl, title: string): VNode {
 function show(ctrl: AnalyseCtrl) {
   const trans = ctrl.trans.noarg,
   data = ctrl.explorer.current();
+  console.log(data);
   if (data && isOpening(data)) {
     const moveTable = showMoveTable(ctrl, data.moves, data.fen),
     recentTable = showGameTable(ctrl, trans('recentGames'), data.recentGames || []),
     topTable = showGameTable(ctrl, trans('topGames'), data.topGames || []);
     if (moveTable || recentTable || topTable) lastShow = h('div.data', [moveTable, topTable, recentTable]);
+    else lastShow = showEmpty(ctrl);
+  } else if (data && isChessdb(data)) {
+    const moves = data.moves;
+    if (data.status === 'checkmate') lastShow = showGameEnd(ctrl, trans('checkmate'));
+    else if (moves && moves.length) lastShow = h('div.data', JSON.stringify(moves));
     else lastShow = showEmpty(ctrl);
   } else if (data && isTablebase(data)) {
     const moves = data.moves;

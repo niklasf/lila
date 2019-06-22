@@ -104,7 +104,7 @@ trait AssetHelper { self: I18nHelper with SecurityHelper =>
     val socket = (if (req.secure) "wss://" else "ws://") + socketDomain + (if (socketDomain.contains(":")) "" else ":*")
     ContentSecurityPolicy(
       defaultSrc = List("'self'", assets),
-      connectSrc = List("'self'", assets, socket, lila.api.Env.current.ExplorerEndpoint, lila.api.Env.current.TablebaseEndpoint),
+      connectSrc = List("'self'", assets, socket, lila.api.Env.current.ExplorerEndpoint, lila.api.Env.current.TablebaseEndpoint, "www.chessdb.cn"),
       styleSrc = List("'self'", "'unsafe-inline'", assets),
       fontSrc = List("'self'", assetDomain, "https://fonts.gstatic.com"),
       frameSrc = List("'self'", assets, "https://www.youtube.com"),

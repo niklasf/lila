@@ -1,4 +1,4 @@
-import { OpeningData, TablebaseData } from './interfaces';
+import { OpeningData, TablebaseData, ExplorerData } from './interfaces';
 
 export function opening(endpoint: string, variant: VariantKey, fen: Fen, config, withGames: boolean): JQueryPromise<OpeningData> {
   let url: string;
@@ -35,5 +35,22 @@ export function tablebase(endpoint: string, variant: VariantKey, fen: Fen): JQue
     data.tablebase = true;
     data.fen = fen;
     return data as TablebaseData;
+  });
+}
+
+export function chessdb(fen: Fen): JQueryPromise<ExplorerData> {
+  return $.ajax({
+    url: 'https://www.chessdb.cn/cdb.php',
+    data: {
+      action: 'queryall',
+      board: fen,
+      json: 1
+    },
+    cache: true
+  }).then((data: Partial<ExplorerData>) => {
+    data.chessdb = true;
+    data.fen = fen;
+    console.log(data);
+    return data as ExplorerData;
   });
 }

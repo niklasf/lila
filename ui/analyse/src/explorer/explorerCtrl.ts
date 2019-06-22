@@ -61,7 +61,8 @@ export default function(root: AnalyseCtrl, opts, allow: boolean): ExplorerCtrl {
     const fen = root.node.fen;
     const request: JQueryPromise<ExplorerData> = (withGames && tablebaseRelevant(effectiveVariant, fen)) ?
       xhr.tablebase(opts.tablebaseEndpoint, effectiveVariant, fen) :
-      xhr.opening(opts.endpoint, effectiveVariant, fen, config.data, withGames);
+      ((config.data.db.selected() === 'chessdb.cn') ? xhr.chessdb(fen) :
+      xhr.opening(opts.endpoint, effectiveVariant, fen, config.data, withGames));
 
     request.then((res: ExplorerData) => {
       cache[fen] = res;

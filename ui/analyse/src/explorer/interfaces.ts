@@ -42,6 +42,7 @@ export interface ExplorerData {
   moves: MoveStats[];
   opening?: true;
   tablebase?: true;
+  chessdb?: true;
 }
 
 export interface OpeningData extends ExplorerData {
@@ -75,6 +76,10 @@ export interface TablebaseData extends ExplorerData {
   insufficient_material: boolean;
 }
 
+export interface ChessdbData extends ExplorerData {
+  status: 'checkmate' | 'ok';
+}
+
 export interface MoveStats {
   uci: Uci;
   san: San;
@@ -103,6 +108,9 @@ export function isOpening(m: ExplorerData): m is OpeningData {
 }
 export function isTablebase(m: ExplorerData): m is TablebaseData {
   return !!m.tablebase;
+}
+export function isChessdb(m: ExplorerData): m is ChessdbData {
+  return !!m.chessdb;
 }
 
 export interface SimpleTablebaseHit {
