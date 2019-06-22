@@ -4,7 +4,7 @@ import { view as renderConfig } from './explorerConfig';
 import { bind, dataIcon } from '../util';
 import { winnerOf } from './explorerUtil';
 import AnalyseCtrl from '../ctrl';
-import { isOpening, isTablebase, isChessdb, TablebaseMoveStats, OpeningMoveStats, OpeningGame } from './interfaces';
+import { isOpening, isTablebase, isChessdb, TablebaseMoveStats, OpeningMoveStats, ChessdbMoveStats, OpeningGame } from './interfaces';
 
 function resultBar(move: OpeningMoveStats): VNode {
   const sum = move.white + move.draws + move.black;
@@ -202,6 +202,35 @@ function showDtz(ctrl: AnalyseCtrl, fen: Fen, move: TablebaseMoveStats): VNode |
   }, 'DTZ ' + Math.abs(move.dtz));
 }
 
+function showChessdbTable(ctrl: AnalyseCtrl, moves: ChessdbMoveStats[], fen: Fen): VNode {
+  const trans = ctrl.trans.noarg;
+  return h('table.moves', [
+    h('thead', [
+      h('tr', [
+        h('th.title', trans('move')),
+        h('th.title', 'score'),
+        h('th.title', 'rank'),
+        h('th.title', 'note'),
+        h('th.title', 'winrate')
+      ])
+    ]),
+    h('tbody', moveTableAttributes(ctrl, fen), moves.map(move => {
+      return h('tr', {
+        key: move.uci,
+        attrs: {
+          'data-uci': move.uci
+        }
+      }, [
+        h('td', move.san),
+        h('td', '' + move.score),
+        h('td', '' + move.rank),
+        h('td', move.note),
+        h('td', move.winrate)
+      ]);
+    }))
+  ]);
+}
+
 function closeButton(ctrl: AnalyseCtrl): VNode {
   return h('button.button.button-empty.text', {
     attrs: dataIcon('L'),
@@ -244,9 +273,10 @@ function show(ctrl: AnalyseCtrl) {
     if (moveTable || recentTable || topTable) lastShow = h('div.data', [moveTable, topTable, recentTable]);
     else lastShow = showEmpty(ctrl);
   } else if (data && isChessdb(data)) {
+    console.log('data', data);
     const moves = data.moves;
     if (data.status === 'checkmate') lastShow = showGameEnd(ctrl, trans('checkmate'));
-    else if (moves && moves.length) lastShow = h('div.data', JSON.stringify(moves));
+    else if (moves && moves.length) lastShow = showChessdbTable(ctrl, moves, data.fen);
     else lastShow = showEmpty(ctrl);
   } else if (data && isTablebase(data)) {
     const moves = data.moves;

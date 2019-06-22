@@ -39,7 +39,7 @@ export interface ExplorerConfigCtrl {
 
 export interface ExplorerData {
   fen: Fen;
-  moves: MoveStats[];
+  moves?: MoveStats[];
   opening?: true;
   tablebase?: true;
   chessdb?: true;
@@ -78,6 +78,7 @@ export interface TablebaseData extends ExplorerData {
 
 export interface ChessdbData extends ExplorerData {
   status: 'checkmate' | 'ok';
+  moves?: ChessdbMoveStats[];
 }
 
 export interface MoveStats {
@@ -101,6 +102,12 @@ export interface TablebaseMoveStats extends MoveStats {
   variant_loss: boolean;
   insufficient_material: boolean;
   zeroing: boolean;
+}
+export interface ChessdbMoveStats extends MoveStats {
+  score: number;
+  rank: number;
+  note: string;
+  winrate: string;
 }
 
 export function isOpening(m: ExplorerData): m is OpeningData {

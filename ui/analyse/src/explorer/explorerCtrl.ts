@@ -66,7 +66,7 @@ export default function(root: AnalyseCtrl, opts, allow: boolean): ExplorerCtrl {
 
     request.then((res: ExplorerData) => {
       cache[fen] = res;
-      movesAway(res.moves.length ? 0 : movesAway() + 1);
+      movesAway((res.moves && res.moves.length) ? 0 : movesAway() + 1);
       loading(false);
       failing(false);
       root.redraw();
@@ -91,7 +91,7 @@ export default function(root: AnalyseCtrl, opts, allow: boolean): ExplorerCtrl {
     }
     const cached = cache[root.node.fen];
     if (cached) {
-      movesAway(cached.moves.length ? 0 : movesAway() + 1);
+      movesAway((cached.moves && cached.moves.length) ? 0 : movesAway() + 1);
       loading(false);
       failing(false);
     } else {
