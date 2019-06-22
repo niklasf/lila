@@ -6,7 +6,7 @@ export interface Hovering {
   uci: Uci;
 }
 
-export type ExplorerDb = 'lichess' | 'masters';
+export type ExplorerDb = 'lichess' | 'masters' | 'chessdb.cn';
 
 export type ExplorerSpeed = 'bullet' | 'blitz' | 'rapid' | 'classical';
 

@@ -1,5 +1,5 @@
 import { h } from 'snabbdom';
-import { VNode } from 'snabbdom/vnode'
+import { VNode } from 'snabbdom/vnode';
 import { prop } from 'common';
 import { storedProp, storedJsonProp } from 'common/storage';
 import { bind, dataIcon } from '../util';
@@ -14,7 +14,10 @@ export function controller(game: Game, onClose: () => void, trans: Trans, redraw
   const variant = (game.variant.key === 'fromPosition') ? 'standard' : game.variant.key;
 
   const available: ExplorerDb[] = ['lichess'];
-  if (variant === 'standard') available.unshift('masters');
+  if (variant === 'standard') {
+    available.unshift('masters');
+    available.push('chessdb.cn');
+  }
 
   const data: ExplorerConfigData = {
     open: prop(false),
@@ -73,10 +76,11 @@ export function view(ctrl: ExplorerConfigCtrl): VNode[] {
         }, s);
       }))
     ]),
-    d.db.selected() === 'masters' ? h('div.masters.message', [
+    ...(d.db.selected() === 'masters' ? [h('div.masters.message', [
       h('i', { attrs: dataIcon('C') }),
       h('p', ctrl.trans('masterDbExplanation', 2200, '1952', '2019'))
-    ]) : h('div', [
+    ])] : []),
+    ...(d.db.selected() === 'lichess' ? [h('div', [
       h('section.rating', [
         h('label', ctrl.trans.noarg('averageElo')),
         h('div.choices',
@@ -99,7 +103,7 @@ export function view(ctrl: ExplorerConfigCtrl): VNode[] {
           })
         )
       ])
-    ]),
+    ])] : []),
     h('section.save',
       h('button.button.button-green.text', {
         attrs: dataIcon('E'),
