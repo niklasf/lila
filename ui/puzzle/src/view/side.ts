@@ -3,15 +3,6 @@ import { VNode } from 'snabbdom/vnode';
 import { dataIcon, innerHTML } from '../util';
 import { Controller } from '../interfaces';
 
-// useful in translation arguments
-function strong(txt) {
-  return '<strong>' + txt + '</strong>';
-}
-
-function hidden() {
-  return '<span class="hidden">[hidden]</span>';
-}
-
 export function puzzleBox(ctrl: Controller) {
   var data = ctrl.getData();
   return h('div.puzzle__side__metas', [
@@ -21,19 +12,14 @@ export function puzzleBox(ctrl: Controller) {
 }
 
 function puzzleInfos(ctrl: Controller, puzzle): VNode {
-
   return h('div.infos.puzzle', {
     attrs: dataIcon('-')
   }, [h('div', [
     h('a.title', {
       attrs: { href: '/training/' + puzzle.id }
     }, ctrl.trans('puzzleId', puzzle.id)),
-    h('p', {
-      hook: innerHTML(ctrl.trans('ratingX', ctrl.vm.mode === 'play' ? hidden() : strong(puzzle.rating)))
-    }),
-    h('p', {
-      hook: innerHTML(ctrl.trans('playedXTimes', strong(window.lichess.numberFormat(puzzle.attempts))))
-    })
+    h('p', ctrl.trans.vdom('ratingX', ctrl.vm.mode === 'play' ? h('span.hidden', 'hidden') : h('strong', puzzle.rating))),
+    h('p', ctrl.trans.vdom('playedXTimes', h('strong', window.lichess.numberFormat(puzzle.attempts))))
   ])]);
 }
 
