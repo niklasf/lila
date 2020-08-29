@@ -63,7 +63,7 @@ private object PgnStorage {
       }
 
     private def chessPos(sq: Integer): Option[Pos] =
-      Pos.posAt(JavaSquare.file(sq) + 1, JavaSquare.rank(sq) + 1)
+      Pos.posAt0(JavaSquare.file(sq), JavaSquare.rank(sq))
     private def chessRole(role: JavaRole): Role =
       role match {
         case JavaRole.PAWN   => Pawn

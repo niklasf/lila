@@ -178,7 +178,7 @@ object BinaryFormat {
         case (acc, (true, p))  => acc + (1 << (3 - p))
       }
 
-      def posInt(pos: Pos): Int = ((pos.x - 1) << 3) + pos.y - 1
+      def posInt(pos: Pos): Int = (pos.x0 << 3) + pos.y0
       val lastMoveInt = clmt.lastMove.map(_.origDest).fold(0) {
         case (o, d) => (posInt(o) << 6) + posInt(d)
       }
@@ -190,14 +190,12 @@ object BinaryFormat {
       doRead(ints(0), ints(1))
     }
 
-    private def posAt(x: Int, y: Int) = Pos.posAt(x + 1, y + 1)
-
     private def doRead(b1: Int, b2: Int) =
       CastleLastMove(
         castles = Castles(b1 > 127, (b1 & 64) != 0, (b1 & 32) != 0, (b1 & 16) != 0),
         lastMove = for {
-          orig <- posAt((b1 & 15) >> 1, ((b1 & 1) << 2) + (b2 >> 6))
-          dest <- posAt((b2 & 63) >> 3, b2 & 7)
+          orig <- Pos.posAt0((b1 & 15) >> 1, ((b1 & 1) << 2) + (b2 >> 6))
+          dest <- Pos.posAt0((b2 & 63) >> 3, b2 & 7)
           if orig != Pos.A1 || dest != Pos.A1
         } yield Uci.Move(orig, dest)
       )
@@ -272,8 +270,8 @@ object BinaryFormat {
         var white = 0
         var black = 0
         o.pos.foreach { pos =>
-          if (pos.y == 1) white = white | (1 << (8 - pos.x))
-          else black = black | (1 << (8 - pos.x))
+          if (pos.y0 == 0) white = white | (1 << (7 - pos.x0))
+          else black = black | (1 << (7 - pos.x0))
         }
         Array(white.toByte, black.toByte)
       }
@@ -295,7 +293,7 @@ object BinaryFormat {
             if (int == -127) set = if (i == 0) whiteStd else set ++ blackStd
             else
               bitIndexes.foreach { j =>
-                if (bitAt(int, j) == 1) set = set + Pos.posAt(8 - j, 1 + 7 * i).get
+                if (bitAt(int, j) == 1) set = set + Pos.posAt0(7 - j, 7 * i).get
               }
           }
         }
