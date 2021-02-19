@@ -115,7 +115,7 @@ lazy val common = smallModule("common",
   Seq(),
   Seq(
     scalalib, chess, autoconfig,
-    kamon.core, scalatags, jodaForms, scaffeine, specs2, apacheText
+    kamon.core, scalatags, jodaForms, scaffeine, specs2, apacheText, apacheValidator
   ) ++ reactivemongo.bundle ++ flexmark.bundle
 )
 

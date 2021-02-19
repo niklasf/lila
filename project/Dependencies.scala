@@ -24,6 +24,7 @@ object Dependencies {
   val uaparser    = "org.uaparser"               %% "uap-scala"                       % "0.11.0"
   val specs2      = "org.specs2"                 %% "specs2-core"                     % "4.10.6" % Test
   val apacheText  = "org.apache.commons"          % "commons-text"                    % "1.9"
+  val apacheValidator  = "commons-validator"          % "commons-validator"                    % "1.7"
   val bloomFilter = "com.github.alexandrnikitin" %% "bloom-filter"                    % "0.13.1"
 
   object flexmark {
